@@ -1,0 +1,183 @@
+# NexusAgent Production Stack
+# Scales to millions of users
+
+version: '3.8'
+
+services:
+  # ============================================
+  # LOAD BALANCER
+  # ============================================
+  nginx:
+    image: nginx:latest
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - api-1
+      - api-2
+      - api-3
+    networks:
+      - nexusagent
+
+  # ============================================
+  # API SERVERS (Scale horizontally)
+  # ============================================
+  api-1:
+    build: ./server
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - INSTANCE_ID=api-1
+      - REDIS_HOSTS=redis-1,redis-2,redis-3
+      - POSTGRES_HOST=postgres-primary
+    depends_on:
+      - redis-1
+      - postgres-primary
+    networks:
+      - nexusagent
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
+
+  api-2:
+    build: ./server
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - INSTANCE_ID=api-2
+      - REDIS_HOSTS=redis-1,redis-2,redis-3
+      - POSTGRES_HOST=postgres-primary
+    depends_on:
+      - redis-1
+      - postgres-primary
+    networks:
+      - nexusagent
+
+  api-3:
+    build: ./server
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - INSTANCE_ID=api-3
+      - REDIS_HOSTS=redis-1,redis-2,redis-3
+      - POSTGRES_HOST=postgres-primary
+    depends_on:
+      - redis-1
+      - postgres-primary
+    networks:
+      - nexusagent
+
+  # ============================================
+  # REDIS CLUSTER (Cache + Pub/Sub)
+  # ============================================
+  redis-1:
+    image: redis:7-alpine
+    command: redis-server --cluster-enabled yes --cluster-config-file nodes.conf --cluster-node-timeout 5000 --appendonly yes
+    volumes:
+      - redis-1:/data
+    networks:
+      - nexusagent
+
+  redis-2:
+    image: redis:7-alpine
+    command: redis-server --cluster-enabled yes --cluster-config-file nodes.conf --cluster-node-timeout 5000 --appendonly yes
+    volumes:
+      - redis-2:/data
+    networks:
+      - nexusagent
+
+  redis-3:
+    image: redis:7-alpine
+    command: redis-server --cluster-enabled yes --cluster-config-file nodes.conf --cluster-node-timeout 5000 --appendonly yes
+    volumes:
+      - redis-3:/data
+    networks:
+      - nexusagent
+
+  # ============================================
+  # POSTGRESQL (Primary + Replicas)
+  # ============================================
+  postgres-primary:
+    image: postgres:15
+    environment:
+      - POSTGRES_USER=nexusagent
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=nexusagent
+    volumes:
+      - postgres-primary:/var/lib/postgresql/data
+    networks:
+      - nexusagent
+    command: >
+      postgres
+      -c max_connections=200
+      -c shared_buffers=256MB
+      -c effective_cache_size=1GB
+      -c maintenance_work_mem=64MB
+
+  postgres-replica-1:
+    image: postgres:15
+    environment:
+      - POSTGRES_USER=nexusagent
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=nexusagent
+    depends_on:
+      - postgres-primary
+    networks:
+      - nexusagent
+    command: >
+      postgres
+      -c hot_standby=on
+
+  # ============================================
+  # MESSAGE QUEUE
+  # ============================================
+  rabbitmq:
+    image: rabbitmq:3-management
+    environment:
+      - RABBITMQ_DEFAULT_USER=nexusagent
+      - RABBITMQ_DEFAULT_PASS=password
+    volumes:
+      - rabbitmq:/var/lib/rabbitmq
+    ports:
+      - "15672:15672"
+    networks:
+      - nexusagent
+
+  # ============================================
+  # MONITORING
+  # ============================================
+  prometheus:
+    image: prometheus:latest
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    ports:
+      - "9090:9090"
+    networks:
+      - nexusagent
+
+  grafana:
+    image: grafana/grafana:latest
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    volumes:
+      - grafana:/var/lib/grafana
+    ports:
+      - "3001:3000"
+    networks:
+      - nexusagent
+
+networks:
+  nexusagent:
+    driver: bridge
+
+volumes:
+  redis-1:
+  redis-2:
+  redis-3:
+  postgres-primary:
+  rabbitmq:
+  grafana:

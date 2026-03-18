@@ -1,0 +1,88 @@
+{
+  "server": {
+    "port": 3000,
+    "host": "0.0.0.0"
+  },
+  "security": {
+    "jwtSecret": "CHANGE_ME_IN_PRODUCTION",
+    "tokenExpiry": "7d",
+    "rateLimit": {
+      "maxRequests": 100,
+      "windowMinutes": 1
+    }
+  },
+  "channels": {
+    "telegram": {
+      "enabled": false,
+      "botToken": "YOUR_TELEGRAM_BOT_TOKEN"
+    },
+    "discord": {
+      "enabled": false,
+      "botToken": "YOUR_DISCORD_BOT_TOKEN"
+    },
+    "whatsapp": {
+      "enabled": false,
+      "phoneNumberId": "YOUR_PHONE_NUMBER_ID",
+      "accessToken": "YOUR_WHATSAPP_TOKEN"
+    },
+    "slack": {
+      "enabled": false,
+      "botToken": "YOUR_SLACK_BOT_TOKEN",
+      "signingSecret": "YOUR_SLACK_SIGNING_SECRET"
+    },
+    "signal": {
+      "enabled": false,
+      "phoneNumber": "+1234567890"
+    },
+    "googleChat": {
+      "enabled": false,
+      "botUrl": "YOUR_GOOGLE_CHAT_WEBHOOK_URL"
+    },
+    "irc": {
+      "enabled": false,
+      "server": "irc.example.com",
+      "port": 6667,
+      "nick": "NexusAgent"
+    },
+    "matrix": {
+      "enabled": false,
+      "homeserver": "https://matrix.example.com",
+      "accessToken": "YOUR_MATRIX_TOKEN"
+    }
+  },
+  "sandbox": {
+    "mode": "nonMain",
+    "scope": "session",
+    "image": "nexusagent/sandbox:latest",
+    "networkMode": "bridge",
+    "maxMemoryMB": 512,
+    "maxCpuPercent": 50
+  },
+  "filesystem": {
+    "mode": "workspaceOnly",
+    "workspacePath": "/app/workspace",
+    "maxFileSizeMB": 10
+  },
+  "tools": {
+    "profile": "messaging",
+    "web": {
+      "search": {
+        "provider": "brave",
+        "apiKey": "YOUR_BRAVE_API_KEY"
+      }
+    }
+  },
+  "healthMonitor": {
+    "enabled": true,
+    "checkIntervalMinutes": 5,
+    "staleThresholdMinutes": 30,
+    "maxRestartsPerHour": 10,
+    "autoRestart": true
+  },
+  "loopDetection": {
+    "enabled": true,
+    "warningThreshold": 10,
+    "criticalThreshold": 20,
+    "globalCircuitBreakerThreshold": 30
+  }
+}

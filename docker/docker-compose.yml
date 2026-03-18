@@ -1,0 +1,57 @@
+version: '3.8'
+
+services:
+  nexusagent:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXUSAGENT_JWT_SECRET=${NEXUSAGENT_JWT_SECRET:-change-me-in-production}
+      - NEXUSAGENT_PORT=3000
+      - NEXUSAGENT_LOG_LEVEL=info
+      - NEXUSAGENT_DB_URL=postgresql://nexusagent:password@db:5432/nexusagent
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - nexusagent_data:/app/data
+      - ./config.json:/app/config.json:ro
+    restart: unless-stopped
+    networks:
+      - nexusagent
+
+  db:
+    image: postgres:15-alpine
+    environment:
+      - POSTGRES_DB=nexusagent
+      - POSTGRES_USER=nexusagent
+      - POSTGRES_PASSWORD=password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U nexusagent"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - nexusagent
+
+  redis:
+    image: redis:7-alpine
+    volumes:
+      - redis_data:/data
+    restart: unless-stopped
+    networks:
+      - nexusagent
+
+volumes:
+  nexusagent_data:
+  postgres_data:
+  redis_data:
+
+networks:
+  nexusagent:
+    driver: bridge

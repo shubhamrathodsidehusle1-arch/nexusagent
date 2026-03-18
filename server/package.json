@@ -1,0 +1,19 @@
+{
+  "name": "nexusagent",
+  "version": "1.0.0",
+  "description": "NexusAgent - Secure AI Agent Platform (OpenClaw Alternative)",
+  "main": "src/main.dart",
+  "scripts": {
+    "start": "dart run src/main.dart",
+    "test": "dart test"
+  },
+  "dependencies": {
+    "http": "^1.2.0",
+    "crypto": "^3.0.3",
+    "uuid": "^9.0.0",
+    "web_socket_channel": "^2.4.0"
+  },
+  "devDependencies": {
+    "dart_test": "^1.0.0"
+  }
+}
